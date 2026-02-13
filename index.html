@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>lise.com</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
+
+    <style>
+        :root { 
+            --neon-blue: #00d2ff; --neon-purple: #9d50bb; --hot-pink: #ff007a;
+            --indigo-mix: #4b0082; --dark-bg: #0a0b1e; --card-bg: #161b33;
+            --gradient-main: linear-gradient(45deg, #4b0082, #9d50bb, #00d2ff);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { background: var(--dark-bg); color: #e0e0e0; overflow-x: hidden; }
+
+        #toast { position: fixed; top: 20px; right: -400px; background: white; color: var(--dark-bg); 
+            border-left: 6px solid var(--hot-pink); padding: 20px 30px; border-radius: 20px; 
+            box-shadow: 0 15px 35px rgba(255, 0, 122, 0.3); transition: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            z-index: 10000; font-weight: bold; }
+        #toast.show { right: 20px; }
+
+        #auth-page { 
+            height: 100vh; display: flex; justify-content: center; align-items: center; 
+            background: radial-gradient(circle at center, #0f0c29 0%, #000000 100%);
+            position: relative; overflow: hidden;
+        }
+
+        .shape {
+            position: absolute; color: rgba(255, 255, 255, 0.2);
+            user-select: none; pointer-events: none; animation: drift linear infinite;
+        }
+
+        @keyframes drift {
+            from { transform: translateY(115vh) rotate(0deg); opacity: 0; }
+            20% { opacity: 0.7; } 80% { opacity: 0.7; }
+            to { transform: translateY(-20vh) rotate(360deg); opacity: 0; }
+        }
+
+        .auth-box { 
+            background: rgba(10, 11, 30, 0.85); padding: 50px; border-radius: 40px; width: 450px; 
+            text-align: center; box-shadow: 0 0 40px rgba(75, 0, 130, 0.4); backdrop-filter: blur(25px);
+            z-index: 100; border: 3px solid var(--indigo-mix);
+        }
+        
+        .auth-box h1 { font-size: 50px; background: var(--gradient-main); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; }
+
+        input { 
+            width: 100%; padding: 15px; margin: 12px 0; border: 2px solid #2a2d4e; 
+            border-radius: 18px; outline: none; transition: 0.3s; 
+            background: rgba(255,255,255,0.05); color: white;
+        }
+        input:focus { border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(0, 210, 255, 0.4); }
+        
+        .btn { 
+            width: 100%; padding: 18px; border: none; border-radius: 18px; 
+            background: var(--gradient-main); background-size: 200% auto;
+            color: white; font-weight: 800; cursor: pointer; transition: 0.5s; 
+        }
+        .btn:hover { background-position: right center; transform: translateY(-3px); }
+
+        #main-site { display: none; animation: fadeIn 0.8s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        nav { 
+            background: rgba(22, 27, 51, 0.8); padding: 20px 8%; display: flex; 
+            justify-content: space-between; align-items: center; 
+            backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.1);
+            position: sticky; top: 0; z-index: 1000;
+        }
+        
+        .admin-panel { 
+            display: none; background: #1e1435; padding: 30px; margin: 30px 8%; 
+            border: 2px solid var(--neon-purple); border-radius: 30px;
+        }
+        
+        .container { padding: 40px 8%; max-width: 1400px; margin: auto; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 30px; }
+        
+        .card { 
+            background: var(--card-bg); padding: 30px; border-radius: 35px; 
+            border-left: 5px solid var(--indigo-mix); transition: 0.4s; position: relative;
+        }
+        .card:hover { transform: scale(1.03); border-left-color: var(--neon-blue); }
+        
+        .badge { position: absolute; top: 20px; right: 25px; background: var(--gradient-main); color: white; font-size: 11px; padding: 6px 15px; border-radius: 25px; font-weight: bold; }
+        
+        .footer-info { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; z-index: 9999; }
+        .okul-imza { background: var(--indigo-mix); color: white; padding: 10px 20px; border-radius: 100px; font-size: 11px; font-weight: 800; }
+        .dev-imza { background: #fff; color: #000; padding: 6px 15px; border-radius: 100px; font-size: 10px; font-weight: bold; }
+        .dev-imza span { color: var(--hot-pink); }
+
+        .destek-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); padding: 40px; border-radius: 40px; margin-top: 60px; text-align: center; }
+        .btn-kucuk { padding: 12px 25px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; background: transparent; color: white; font-weight: bold; transition: 0.3s; }
+        .btn-kucuk:hover { background: white; color: black; }
+        .btn-sil { background: rgba(255, 77, 77, 0.1); color: #ff4d4d; border: 1px solid #ff4d4d; padding: 8px 15px; border-radius: 12px; cursor: pointer; font-size: 11px; }
+    </style>
+</head>
+<body>
+
+    <div id="toast">İşlem Tamamlandı ✨</div>
+
+    <div class="footer-info">
+        <div class="okul-imza">⚡ BATMAN GÜLTEPE ANADOLU LİSESİ</div>
+        <div class="dev-imza">Geliştirici: <span>Dılgeş İşcan</span></div>
+    </div>
+
+    <div id="auth-page">
+        <div class="auth-box">
+            <h1>lise.com</h1>
+            <p style="margin-bottom:20px; color:#aaa;">Mükkemmel İçerik Adresi</p>
+            <input type="text" id="user" placeholder="Kullanıcı Adınız">
+            <input type="password" id="pass" placeholder="Admin Şifresi">
+            <button class="btn" onclick="girisYap()">GİRİŞ</button>
+        </div>
+    </div>
+
+    <div id="main-site">
+        <nav>
+            <h2 style="background: var(--gradient-main); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 30px; font-weight: 800;">lise.com</h2>
+            <div>
+                <span id="welcome-text" style="font-weight:bold; margin-right:20px; color: var(--neon-blue);"></span>
+                <button class="btn-kucuk" onclick="location.reload()">Güvenli Çıkış</button>
+            </div>
+        </nav>
+
+        <div id="admin-area" class="admin-panel">
+            <h3 style="margin-bottom:20px; color: var(--neon-purple);">Yönetici Erişimi</h3>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:15px;">
+                <input type="text" id="notAd" placeholder="İçerik Başlığı" style="margin:0">
+                <input type="text" id="notLink" placeholder="Dosya Linki" style="margin:0; flex:2">
+                <button onclick="yayinla()" class="btn" style="width:auto; padding:0 30px;">Yayınla</button>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="ibanInput" placeholder="Destek Mesajı" style="margin:0; flex:1;">
+                <button onclick="destekGuncelle()" class="btn-kucuk">Güncelle</button>
+                <button onclick="sifreDegistir()" class="btn-kucuk">Şifreyi Değiştir</button>
+            </div>
+        </div>
+
+        <div class="container">
+            <h2 style="margin-bottom:30px; font-weight: 800;">📂 Güncel İçerikler</h2>
+            <div class="grid" id="liste"></div>
+            <div class="destek-box">
+                <h3 style="color:var(--neon-blue); margin-bottom:10px;">☕ Destek Ol</h3>
+                <p id="destek-metni" style="color: #bbb;">Yükleniyor...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function createDenseShapes() {
+            const authPage = document.getElementById('auth-page');
+            const items = ['π', 'Σ', '∫', 'Δ', '√', '∞', 'f(x)', '⚛', '📐', 'λ'];
+            for (let i = 0; i < 60; i++) {
+                let s = document.createElement('div');
+                s.className = 'shape';
+                s.innerText = items[Math.floor(Math.random() * items.length)];
+                s.style.cssText = `left:${Math.random()*100}vw; font-size:${Math.random()*20+10}px; animation-duration:${Math.random()*10+5}s; animation-delay:${Math.random()*-15}s; top:-50px;`;
+                authPage.appendChild(s);
+            }
+        }
+        createDenseShapes();
+
+        const firebaseConfig = { 
+            apiKey: "AIzaSyCzisPTByg_0rUL29whenihkC4sB44KcDU", 
+            authDomain: "lise-com-7a9e8.firebaseapp.com",
+            databaseURL: "https://lise-com-default-rtdb.europe-west1.firebasedatabase.app/",
+            projectId: "lise-com",
+            storageBucket: "lise-com.appspot.com",
+            messagingSenderId: "700963300358",
+            appId: "1:700963300358:web:d933f46da1982a56d80f87"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let isAdminActive = false;
+
+        function bildirim(m) {
+            const t = document.getElementById('toast');
+            t.innerText = m; t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        function girisYap() {
+            const u = document.getElementById('user').value.trim();
+            const p = document.getElementById('pass').value.trim();
+            if(!u) return alert("İsim giriniz!");
+
+            // Veritabanından admin şifresini kontrol et
+            db.ref('adminSifre').once('value').then(s => {
+                const dbPass = s.val() || "dilges123"; // DB boşsa varsayılan
+                
+                if(u.toLowerCase() === "dilges iscan" && p === dbPass) {
+                    isAdminActive = true;
+                    document.getElementById('admin-area').style.display = 'block';
+                    document.getElementById('welcome-text').innerText = "Kaptan: " + u;
+                } else {
+                    document.getElementById('welcome-text').innerText = "Üye: " + u;
+                }
+                document.getElementById('auth-page').style.display = 'none';
+                document.getElementById('main-site').style.display = 'block';
+                verileriYukle();
+            });
+        }
+
+        function verileriYukle() {
+            db.ref('notlar').on('value', s => {
+                const l = document.getElementById('liste'); l.innerHTML = "";
+                const data = s.val();
+                if(data) Object.keys(data).reverse().forEach(id => {
+                    const n = data[id];
+                    l.innerHTML += `<div class="card"><div class="badge">İÇERİK</div><h3 style="color:white; margin-top:10px;">${n.baslik}</h3><p style="color:#666; font-size:12px; margin:10px 0;">📅 ${n.tarih}</p><div style="display:flex; justify-content:space-between; align-items:center;"><a href="${n.url}" target="_blank" style="color:var(--neon-blue); text-decoration:none; font-weight:bold;">Görüntüle ➜</a>${isAdminActive ? `<button onclick="sil('${id}')" class="btn-sil">Sil</button>` : ''}</div></div>`;
+                });
+            });
+            db.ref('destekBilgisi').on('value', s => { document.getElementById('destek-metni').innerText = s.val() || "İçeriklerimizi beğendiyseniz destek olabilirsiniz!"; });
+        }
+
+        function yayinla() {
+            const a = document.getElementById('notAd').value.trim(), l = document.getElementById('notLink').value.trim();
+            if(a && l) {
+                db.ref('notlar').push({ baslik: a, url: l, tarih: new Date().toLocaleDateString('tr-TR') })
+                .then(() => { document.getElementById('notAd').value = ""; document.getElementById('notLink').value = ""; bildirim("Eklendi! 🚀"); });
+            }
+        }
+
+        function destekGuncelle() {
+            const y = document.getElementById('ibanInput').value.trim();
+            if(y) db.ref('destekBilgisi').set(y).then(() => { document.getElementById('ibanInput').value = ""; bildirim("Güncellendi!"); });
+        }
+
+        function sifreDegistir() {
+            let y = prompt("Yeni admin şifresini yazın:");
+            if(y && y.length >= 4) {
+                db.ref('adminSifre').set(y).then(() => bildirim("Şifre başarıyla güncellendi!"));
+            }
+        }
+
+        function sil(id) { if(confirm("Silinsin mi?")) { db.ref('notlar').child(id).remove(); bildirim("Silindi."); } }
+    </script>
+</body>
+</html>
