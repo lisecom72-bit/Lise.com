@@ -123,12 +123,16 @@
 
     <div id="main-site">
         <nav>
-            <h2 style="background: var(--gradient-main); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 30px; font-weight: 800;">lise.com</h2>
-            <div>
-                <span id="welcome-text" style="font-weight:bold; margin-right:20px; color: var(--neon-blue);"></span>
-                <button class="btn-kucuk" onclick="location.reload()">Güvenli Çıkış</button>
-            </div>
-        </nav>
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <img src="Logo.png" alt="Logo" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid var(--neon-blue);">
+        
+        <h2 style="background: var(--gradient-main); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 30px; font-weight: 800;">lise.com</h2>
+    </div>
+    <div>
+        <span id="welcome-text" style="font-weight:bold; margin-right:20px; color: var(--neon-blue);"></span>
+        <button class="btn-kucuk" onclick="location.reload()">Güvenli Çıkış</button>
+    </div>
+</nav>
 
         <div id="admin-area" class="admin-panel">
             <h3 style="margin-bottom:20px; color: var(--neon-purple);">Yönetici Erişimi</h3>
@@ -248,5 +252,6 @@
 </body>
 
 </html>
+
 
 
